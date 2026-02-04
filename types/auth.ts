@@ -5,4 +5,5 @@ export interface AuthToken {
   name?: string;
   email?: string;
   schoolId: string;
+  classId?: string;
 }

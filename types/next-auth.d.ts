@@ -1,45 +1,33 @@
-import NextAuth, { DefaultSession, DefaultJWT } from "next-auth";
+import { DefaultSession, DefaultJWT } from "next-auth";
+import { UserRole } from "@/types/role";
+import NextAuth from "next-auth";
+import { Types } from "mongoose";
 
 declare module "next-auth" {
   interface Session {
     user: {
       id: string;
       role: "ADMIN" | "TEACHER" | "STUDENT" | "PARENT";
-    } & DefaultSession["user"];
-  }
-
-  interface User {
-    id: string;
-    role: "ADMIN" | "TEACHER" | "STUDENT" | "PARENT";
-  }
-}
-
-declare module "next-auth/jwt" {
-  interface JWT extends DefaultJWT {
-    role?: "ADMIN" | "TEACHER" | "STUDENT" | "PARENT";
-    id?: string;
-  }
-}
-
-declare module "next-auth" {
-  interface Session {
-    user: {
-      id: string;
-      role: string;
-      name?: string | null;
-      email?: string | null;
+      classId?: string;
+      schoolId: string;
+      name: string;
+      email: string;
     };
   }
 
   interface User {
     id: string;
-    role: string;
+    role: UserRole;
+    schoolId?: string;
+    classId?: string;
   }
 }
 
 declare module "next-auth/jwt" {
-  interface JWT {
+  interface JWT extends DefaultJWT {
     id: string;
-    role: string;
+    role: UserRole;
+    schoolId?: string;
+    classId?: string;
   }
 }

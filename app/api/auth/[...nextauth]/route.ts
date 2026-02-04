@@ -1,9 +1,13 @@
-import NextAuth, { NextAuthOptions } from "next-auth";
+import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcrypt";
 import { connectDB } from "@/lib/db";
 import { User } from "@/models/User";
+import type { NextAuthOptions } from "next-auth";
 
+/* =========================
+   NEXTAUTH CONFIG
+========================= */
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -14,38 +18,30 @@ export const authOptions: NextAuthOptions = {
       },
 
       async authorize(credentials) {
-        if (!credentials?.email || !credentials.password) {
-          console.log("Login failed: Missing email or password");
-          return null;
-        }
+        if (!credentials?.email || !credentials.password) return null;
 
         await connectDB();
 
-        // ✅ Find user case-insensitively
         const user = await User.findOne({
           email: credentials.email.toLowerCase(),
         });
-        if (!user) {
-          console.log("Login failed: User not found", credentials.email);
-          return null;
-        }
 
-        // ✅ Check password with bcrypt
+        if (!user) return null;
+
         const isValid = await bcrypt.compare(
           credentials.password,
           user.password,
         );
-        if (!isValid) {
-          console.log("Login failed: Invalid password", credentials.email);
-          return null;
-        }
 
-        // ✅ Return the user object with role
+        if (!isValid) return null;
+
         return {
           id: user._id.toString(),
-          email: user.email,
           name: user.name,
-          role: user.role as "ADMIN" | "TEACHER" | "STUDENT" | "PARENT",
+          email: user.email,
+          role: user.role,
+          schoolId: user.schoolId?.toString(),
+          classId: user.classId?.toString(),
         };
       },
     }),
@@ -53,26 +49,30 @@ export const authOptions: NextAuthOptions = {
 
   session: {
     strategy: "jwt",
-    maxAge: 30 * 60, // 30 minutes
-  },
-
-  jwt: {
     maxAge: 30 * 60,
   },
 
   callbacks: {
     async jwt({ token, user }) {
-      // Store role in JWT on login
       if (user) {
-        token.role = user.role;
+        token.id = user.id;
+        token.role = user.role as "ADMIN" | "TEACHER" | "STUDENT" | "PARENT";
+        token.schoolId = user.schoolId;
+        token.classId = user.classId;
       }
       return token;
     },
-
     async session({ session, token }) {
-      // Attach role to session.user
-      if (session.user && token.role) {
-        session.user.role = token.role;
+      if (session.user) {
+        session.user.id = token.id as string;
+        session.user.role = token.role as
+          | "ADMIN"
+          | "TEACHER"
+          | "STUDENT"
+          | "PARENT";
+
+        session.user.schoolId = token.schoolId as string;
+        session.user.classId = token.classId as string;
       }
       return session;
     },
@@ -82,9 +82,12 @@ export const authOptions: NextAuthOptions = {
     signIn: "/login",
   },
 
-  debug: process.env.NODE_ENV === "development", // helpful for debugging login issues
+  debug: process.env.NODE_ENV === "development",
 };
 
-// ✅ Export handler for Next.js Route API
+/* =========================
+   APP ROUTER HANDLERS
+========================= */
 const handler = NextAuth(authOptions);
+
 export { handler as GET, handler as POST };
