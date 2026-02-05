@@ -51,12 +51,14 @@ export default function SubjectDetailsPage() {
         animate={{ opacity: 1, y: 0 }}
         className="bg-white p-6 rounded-xl border shadow-sm"
       >
-        <h1 className="text-2xl font-bold">{subject.name}</h1>
+        <h1 className="text-2xl font-bold text-blue-500">{subject.name}</h1>
         <p className="text-gray-500 mt-1">
           {subject.code} • {subject.className}
         </p>
 
-        <p className="text-sm mt-2">👨‍🏫 Teacher: {subject.teacher}</p>
+        <p className="text-sm mt-2 text-gray-600">
+          👨‍🏫 Teacher: {subject.teacher}
+        </p>
 
         {subject.isCompulsory && (
           <span className="inline-block mt-3 text-xs px-3 py-1 rounded-full bg-red-100 text-red-600">
@@ -67,7 +69,9 @@ export default function SubjectDetailsPage() {
 
       {/* Learning Materials */}
       <div>
-        <h2 className="text-xl font-bold mb-4">Learning Materials</h2>
+        <h2 className="text-xl font-bold mb-4 text-blue-500">
+          Learning Materials
+        </h2>
 
         {materials.length === 0 && (
           <p className="text-gray-500">No materials uploaded yet.</p>
@@ -80,7 +84,7 @@ export default function SubjectDetailsPage() {
               whileHover={{ y: -4 }}
               className="border rounded-xl p-5 bg-white shadow-sm"
             >
-              <h3 className="font-semibold">{m.title}</h3>
+              <h3 className="font-semibold text-gray-800">{m.title}</h3>
 
               {m.description && (
                 <p className="text-sm text-gray-500 mt-1">{m.description}</p>

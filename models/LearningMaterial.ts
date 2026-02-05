@@ -8,7 +8,7 @@ const LearningMaterialSchema = new Schema(
     fileType: { type: String }, // "pdf", "doc", "video", "link"
     link: { type: String }, // Optional external link
     subjectId: { type: Schema.Types.ObjectId, ref: "Subject", required: true },
-    classId: { type: Schema.Types.ObjectId, ref: "Class", required: true },
+    // classId: { type: Schema.Types.ObjectId, ref: "Class", required: true },
     uploadedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
     tags: [{ type: String }], // Optional tags for filtering
   },

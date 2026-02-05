@@ -1,135 +1,115 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { connectDB } from "@/lib/db";
-import { Material } from "@/models/Material";
-import { verifyTeacher } from "@/lib/rbac"; // ✅ use your existing function
+import { verifyTeacher } from "@/lib/rbac";
+import { LearningMaterial } from "@/models/LearningMaterial";
 
-// ---------------- GET: List Materials ----------------
-export async function GET(req: Request) {
+// ---------------- GET: List Materials by Subject ----------------
+export async function GET(req: NextRequest) {
   const teacherCheck = await verifyTeacher(req);
-
-  // If unauthorized, teacherCheck is a NextResponse → return it
   if (teacherCheck instanceof NextResponse) return teacherCheck;
-
-  // ✅ Now TypeScript knows this is a token
-  const token = teacherCheck;
 
   await connectDB();
 
   const url = new URL(req.url);
-  const classId = url.searchParams.get("classId");
+  const subjectId = url.searchParams.get("subjectId");
+  if (!subjectId) return NextResponse.json([], { status: 200 });
 
-  let query: any = {};
-  if (classId) query.classId = classId;
-
-  const materials = await Material.find(query)
+  const materials = await LearningMaterial.find({ subjectId })
     .populate("uploadedBy", "name email")
-    .populate("classId", "name")
     .populate("subjectId", "name")
     .sort({ createdAt: -1 });
 
-  return NextResponse.json(materials);
+  const mapped = materials.map((m) => ({
+    _id: m._id,
+    title: m.title,
+    description: m.description,
+    fileUrl: m.fileUrl,
+    link: m.link,
+    tags: m.tags,
+    uploadedBy: (m.uploadedBy as any)?.name || "Unknown",
+    createdAt: m.createdAt.toISOString(),
+  }));
+
+  return NextResponse.json(mapped);
 }
 
 // ---------------- POST: Upload Material ----------------
-
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   const teacherCheck = await verifyTeacher(req);
-
   if (teacherCheck instanceof NextResponse) return teacherCheck;
 
-  // ✅ TS now knows teacherCheck is AuthToken
   const token = teacherCheck;
-
   const body = await req.json();
-  const { title, fileUrl, classId } = body;
 
-  if (!title || !fileUrl || !classId) {
+  const { title, fileUrl, link, subjectId, description, tags } = body;
+
+  if (!title || (!fileUrl && !link) || !subjectId) {
     return NextResponse.json(
       { error: "Missing required fields" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
-  const material = await Material.create({
+  await connectDB();
+
+  let fileType = "link";
+
+  if (fileUrl) {
+    const ext = fileUrl.split(".").pop()?.toLowerCase();
+    if (["pdf"].includes(ext || "")) fileType = "pdf";
+    else if (["doc", "docx"].includes(ext || "")) fileType = "doc";
+    else if (["mp4", "mov", "avi"].includes(ext || "")) fileType = "video";
+    else if (["jpg", "jpeg", "png", "webp"].includes(ext || ""))
+      fileType = "image";
+    else fileType = "file";
+  }
+
+  const material = await LearningMaterial.create({
     title,
+    description,
     fileUrl,
-    classId,
-    uploadedBy: token.sub, // ✅ TS is happy now
+    link,
+    subjectId,
+    tags,
+    fileType,
+    uploadedBy: token.sub,
   });
 
-  return NextResponse.json(material, { status: 201 });
+  return NextResponse.json(
+    {
+      ...material.toObject(),
+      uploadedBy: (token as any)?.name || "You",
+    },
+    { status: 201 },
+  );
 }
 
-// ---------------- PUT: Update Material ----------------
-export async function PUT(req: Request) {
+// ---------------- DELETE: Remove Material ----------------
+export async function DELETE(req: NextRequest) {
   const teacherCheck = await verifyTeacher(req);
-
   if (teacherCheck instanceof NextResponse) return teacherCheck;
 
-  // ✅ TS now knows teacherCheck is AuthToken
   const token = teacherCheck;
-  const body = await req.json();
-  const { id, title, description, fileUrl, type } = body;
+  const url = new URL(req.url);
+  const id = url.searchParams.get("id");
 
   if (!id) {
     return NextResponse.json(
       { error: "Material ID is required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   await connectDB();
 
-  const material = await Material.findById(id);
+  const material = await LearningMaterial.findById(id);
   if (!material)
     return NextResponse.json({ error: "Material not found" }, { status: 404 });
 
-  // Only uploader or admin can update
-  if (material.uploadedBy.toString() !== teacherCheck.sub) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  material.title = title || material.title;
-  material.description = description || material.description;
-  material.fileUrl = fileUrl || material.fileUrl;
-  material.type = type || material.type;
-
-  await material.save();
-
-  return NextResponse.json(material);
-}
-
-// ---------------- DELETE: Remove Material ----------------
-export async function DELETE(req: Request) {
-  const teacherCheck = await verifyTeacher(req);
-
-  // If unauthorized, teacherCheck is a NextResponse → return it
-  if (teacherCheck instanceof NextResponse) return teacherCheck;
-
-  // ✅ Now TypeScript knows this is a token
-  const token = teacherCheck;
-
-  const url = new URL(req.url);
-  const id = url.searchParams.get("id");
-
-  if (!id)
-    return NextResponse.json(
-      { error: "Material ID is required" },
-      { status: 400 }
-    );
-
-  await connectDB();
-
-  const material = await Material.findById(id);
-  if (!material)
-    return NextResponse.json({ error: "Material not found" }, { status: 404 });
-
-  // Only uploader can delete
-  if (material.uploadedBy.toString() !== teacherCheck.sub) {
+  if (material.uploadedBy.toString() !== token.sub) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   await material.deleteOne();
-
   return NextResponse.json({ message: "Material deleted successfully" });
 }

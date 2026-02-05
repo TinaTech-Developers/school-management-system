@@ -45,6 +45,11 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
       href: "/teacher/results",
     },
     {
+      name: "Learning Materials",
+      icon: <FiBook size={22} />,
+      href: "/teacher/learning-materials",
+    },
+    {
       name: "Assignments",
       icon: <FiBook size={22} />,
       href: "/teacher/assignments",
