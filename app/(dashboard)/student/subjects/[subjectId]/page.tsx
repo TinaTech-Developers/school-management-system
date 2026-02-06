@@ -44,7 +44,7 @@ export default function SubjectDetailsPage() {
   if (!subject) return <p className="p-4 md:p-6">Subject not found.</p>;
 
   return (
-    <div className="p-4 md:p-6 space-y-8">
+    <div className="p-2 md:p-6 space-y-8">
       {/* Subject Header */}
       <motion.div
         initial={{ opacity: 0, y: 15 }}
