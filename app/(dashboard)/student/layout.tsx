@@ -15,6 +15,7 @@ import {
   FiMenu,
   FiX,
   FiLogOut,
+  FiFile,
 } from "react-icons/fi";
 import { signOut } from "next-auth/react";
 
@@ -24,6 +25,7 @@ const navItems = [
   // { name: "Classes", href: "/student/classes", icon: FiBook },
   { name: "Assignments", href: "/student/assignments", icon: FiClipboard },
   { name: "Timetable", href: "/student/timetable", icon: FiCalendar },
+  { name: "Results", href: "/student/results", icon: FiFile },
   { name: "Fees", href: "/student/fees", icon: FiDollarSign },
   { name: "Notifications", href: "/student/notifications", icon: FiBell },
   { name: "Profile", href: "/student/profile", icon: FiUser },
