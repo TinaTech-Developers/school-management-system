@@ -106,7 +106,7 @@ export default function StudentSubjectsPage() {
   };
 
   return (
-    <div className="w-full mx-auto p-4 space-y-10">
+    <div className="w-full mx-auto p-2 space-y-10">
       <ToastContainer position="top-right" autoClose={3000} />
 
       {/* Registered Subjects */}
