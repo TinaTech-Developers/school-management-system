@@ -39,17 +39,17 @@ export default function SubjectDetailsPage() {
     if (subjectId) load();
   }, [subjectId]);
 
-  if (loading) return <p className="p-6">Loading subject...</p>;
+  if (loading) return <p className="p-4 md:p-6">Loading subject...</p>;
 
-  if (!subject) return <p className="p-6">Subject not found.</p>;
+  if (!subject) return <p className="p-4 md:p-6">Subject not found.</p>;
 
   return (
-    <div className="p-6 space-y-8">
+    <div className="p-4 md:p-6 space-y-8">
       {/* Subject Header */}
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white p-6 rounded-xl border shadow-sm"
+        className="bg-white p-4 rounded-xl border shadow-sm"
       >
         <h1 className="text-2xl font-bold text-blue-500">{subject.name}</h1>
         <p className="text-gray-500 mt-1">

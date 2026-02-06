@@ -121,7 +121,7 @@ export default function StudentSubjectsPage() {
           {mySubjects.map((s) => (
             <div
               key={s._id}
-              className="relative rounded-2xl border border-green-300 bg-linear-to-br from-green-50 to-white md:p-5 shadow-md"
+              className="relative rounded-2xl border border-green-300 bg-linear-to-br from-green-50 to-white p-5 shadow-md"
             >
               <Link href={`/student/subjects/${s._id}`}>
                 <div className="cursor-pointer hover:scale-[1.01] transition">
