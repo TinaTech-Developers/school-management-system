@@ -98,7 +98,7 @@ export default function TeacherDashboard() {
       value: stats.resultsPending,
       icon: <FiLayers size={24} />,
       link: "/teacher/results",
-      color: "bg-purple-500",
+      color: "bg-blue-500",
       trend: stats.resultsTrend,
     },
   ];

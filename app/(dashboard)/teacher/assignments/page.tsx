@@ -1,169 +1,213 @@
 "use client";
 
-import { useEffect, useState, FormEvent } from "react";
-import { FiPlus, FiEdit2, FiX } from "react-icons/fi";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import { motion } from "framer-motion";
+import { UploadButton } from "@uploadthing/react";
+import type { OurFileRouter } from "@/app/api/uploadthing/core";
 
 interface Subject {
   _id: string;
   name: string;
+  className: string;
 }
 
 interface Assignment {
   _id: string;
   title: string;
   description?: string;
-  subjectId: Subject;
-  dueDate: string;
+  fileUrl?: string;
+  dueDate?: string;
 }
 
-export default function TeacherAssignments() {
-  const [assignments, setAssignments] = useState<Assignment[]>([]);
+export default function TeacherAssignmentsPage() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [addOpen, setAddOpen] = useState(false);
-  const [selected, setSelected] = useState<Assignment | null>(null);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [selectedSubject, setSelectedSubject] = useState("");
+  const [fileUrl, setFileUrl] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const fetchAssignments = async () => {
-    const res = await fetch("/api/teacher/assignments");
-    setAssignments(await res.json());
-  };
-
-  const fetchSubjects = async () => {
-    const res = await fetch("/api/subjects");
-    setSubjects(await res.json());
-  };
+  const [form, setForm] = useState({
+    title: "",
+    description: "",
+    dueDate: "",
+  });
 
   useEffect(() => {
-    fetchAssignments();
     fetchSubjects();
   }, []);
 
-  /* ================= ADD ================= */
-  const addAssignment = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
+  useEffect(() => {
+    if (selectedSubject) fetchAssignments();
+  }, [selectedSubject]);
 
-    const payload = {
-      title: formData.get("title"),
-      description: formData.get("description"),
-      subjectId: formData.get("subjectId"),
-      dueDate: formData.get("dueDate"),
-    };
+  async function fetchSubjects() {
+    const res = await fetch("/api/teacher/subjects");
+    const data = await res.json();
+    setSubjects(data);
+  }
 
-    const res = await fetch("/api/teacher/assignments", {
+  async function fetchAssignments() {
+    try {
+      const res = await fetch(
+        `/api/teacher/assignments?subjectId=${selectedSubject}`,
+      );
+
+      const data = await res.json();
+
+      // VERY IMPORTANT FIX 👇
+      if (Array.isArray(data)) {
+        setAssignments(data);
+      } else if (Array.isArray(data.assignments)) {
+        setAssignments(data.assignments);
+      } else {
+        console.error("Assignments not array:", data);
+        setAssignments([]);
+      }
+    } catch (err) {
+      console.error("Fetch assignments error:", err);
+      setAssignments([]);
+    }
+  }
+
+  async function submit() {
+    if (!selectedSubject) return toast.error("Select subject");
+    if (!form.title) return toast.error("Title required");
+
+    setLoading(true);
+
+    await fetch("/api/teacher/assignments", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        ...form,
+        subjectId: selectedSubject,
+        fileUrl,
+      }),
     });
 
-    if (!res.ok) return toast.error("Failed to create assignment");
+    toast.success("Assignment posted 🎉");
 
-    toast.success("Assignment created");
+    setForm({ title: "", description: "", dueDate: "" });
+    setFileUrl("");
     fetchAssignments();
-    setAddOpen(false);
-    e.currentTarget.reset();
-  };
+    setLoading(false);
+  }
+
+  async function deleteAssignment(id: string) {
+    await fetch(`/api/teacher/assignments?id=${id}`, {
+      method: "DELETE",
+    });
+    fetchAssignments();
+  }
 
   return (
-    <div className="p-6 space-y-4 text-gray-700">
-      <ToastContainer />
+    <div className="p-6 max-w-6xl mx-auto space-y-8">
+      <h1 className="text-2xl font-bold text-blue-600">
+        📝 Assignments Manager
+      </h1>
 
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Assignments</h2>
-        <button
-          onClick={() => setAddOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded"
-        >
-          <FiPlus /> New Assignment
-        </button>
-      </div>
-
-      {/* List */}
-      <div className="bg-white rounded-lg shadow divide-y">
-        {assignments.length === 0 && (
-          <p className="p-4 text-gray-500">No assignments yet</p>
-        )}
-
-        {assignments.map((a) => (
-          <div
-            key={a._id}
-            className="p-4 flex justify-between hover:bg-indigo-50 transition"
-          >
-            <div>
-              <p className="font-semibold">{a.title}</p>
-              <p className="text-sm text-gray-500">
-                Subject: {a.subjectId?.name}
-              </p>
-              <p className="text-xs text-gray-400">
-                Due: {new Date(a.dueDate).toLocaleDateString()}
-              </p>
-            </div>
-
-            <button
-              onClick={() => setSelected(a)}
-              className="flex items-center gap-1 text-indigo-600"
-            >
-              <FiEdit2 /> Edit
-            </button>
-          </div>
+      <select
+        value={selectedSubject}
+        onChange={(e) => setSelectedSubject(e.target.value)}
+        className="border p-2 rounded-xl w-full text-gray-700"
+      >
+        <option value="">Select Subject</option>
+        {subjects.map((s) => (
+          <option key={s._id} value={s._id}>
+            {s.name} ({s.className})
+          </option>
         ))}
-      </div>
+      </select>
 
-      {/* Add Modal */}
-      {addOpen && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md relative">
+      {selectedSubject && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="border p-6 rounded-2xl  bg-white shadow-lg space-y-4"
+          >
+            <input
+              placeholder="Title"
+              value={form.title}
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
+              className="border p-3 rounded-lg w-full text-gray-600"
+            />
+
+            <textarea
+              placeholder="Description"
+              value={form.description}
+              onChange={(e) =>
+                setForm({ ...form, description: e.target.value })
+              }
+              className="border p-3 rounded-lg w-full text-gray-600"
+            />
+
+            <input
+              type="date"
+              value={form.dueDate}
+              onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
+              className="border p-3 rounded-lg w-full text-gray-600"
+            />
+
+            <UploadButton<OurFileRouter, "materialUploader">
+              endpoint="materialUploader"
+              onClientUploadComplete={(res) => {
+                setFileUrl(res[0].ufsUrl ?? res[0].url);
+                toast.success("File uploaded 🎉");
+              }}
+              onUploadError={(error) => {
+                toast.error(error.message);
+              }}
+              className="border-2 border-dashed border-blue-500 bg-gray-300"
+            />
+
             <button
-              onClick={() => setAddOpen(false)}
-              className="absolute top-3 right-3"
+              onClick={submit}
+              className="bg-blue-600 text-white p-3 rounded-lg w-full "
             >
-              <FiX />
+              {loading ? "Posting..." : "Post Assignment"}
             </button>
+          </motion.div>
 
-            <h3 className="font-bold mb-4">New Assignment</h3>
-
-            <form onSubmit={addAssignment} className="space-y-3">
-              <input
-                name="title"
-                required
-                placeholder="Assignment title"
-                className="w-full border px-3 py-2 rounded"
-              />
-
-              <textarea
-                name="description"
-                placeholder="Description"
-                className="w-full border px-3 py-2 rounded"
-              />
-
-              <select
-                name="subjectId"
-                required
-                className="w-full border px-3 py-2 rounded"
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {assignments.map((a) => (
+              <motion.div
+                key={a._id}
+                whileHover={{ scale: 1.03 }}
+                className="border p-5 rounded-2xl shadow-md bg-white"
               >
-                <option value="">Select Subject</option>
-                {subjects.map((s) => (
-                  <option key={s._id} value={s._id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+                <h3 className="font-semibold text-lg text-gray-600">
+                  {a.title}
+                </h3>
+                <p className="text-sm text-gray-500">{a.description}</p>
 
-              <input
-                name="dueDate"
-                type="date"
-                required
-                className="w-full border px-3 py-2 rounded"
-              />
+                {a.fileUrl && (
+                  <a
+                    href={a.fileUrl}
+                    target="_blank"
+                    className="text-blue-600 block mt-2"
+                  >
+                    📄 View Assignment
+                  </a>
+                )}
 
-              <button className="w-full bg-indigo-600 text-white py-2 rounded">
-                Save Assignment
-              </button>
-            </form>
+                {a.dueDate && (
+                  <p className="text-xs mt-2 text-red-500">
+                    Due: {new Date(a.dueDate).toLocaleDateString()}
+                  </p>
+                )}
+
+                <button
+                  onClick={() => deleteAssignment(a._id)}
+                  className="text-red-600 mt-3"
+                >
+                  Delete
+                </button>
+              </motion.div>
+            ))}
           </div>
-        </div>
+        </>
       )}
     </div>
   );
