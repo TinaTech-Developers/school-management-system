@@ -122,7 +122,7 @@ export default function NotificationsPage() {
   );
 
   return (
-    <div className="w-full min-h-screen p-6 bg-gray-50 space-y-8">
+    <div className="w-full min-h-screen p-2 bg-gray-50 space-y-8">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
