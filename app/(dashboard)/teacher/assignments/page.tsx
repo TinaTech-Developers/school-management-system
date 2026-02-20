@@ -42,9 +42,23 @@ export default function TeacherAssignmentsPage() {
   }, [selectedSubject]);
 
   async function fetchSubjects() {
-    const res = await fetch("/api/teacher/subjects");
-    const data = await res.json();
-    setSubjects(data);
+    try {
+      const res = await fetch("/api/teacher/subjects");
+      const data = await res.json();
+
+      // ✅ Handle all possible API shapes
+      if (Array.isArray(data)) {
+        setSubjects(data);
+      } else if (Array.isArray(data.subjects)) {
+        setSubjects(data.subjects);
+      } else {
+        console.error("Subjects not array:", data);
+        setSubjects([]);
+      }
+    } catch (err) {
+      console.error("Fetch subjects error:", err);
+      setSubjects([]);
+    }
   }
 
   async function fetchAssignments() {

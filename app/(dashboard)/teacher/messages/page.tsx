@@ -187,9 +187,9 @@ export default function TeacherMessages() {
     <div className="w-full mx-auto">
       <h1 className="text-xl font-bold text-gray-800 pb-4">Your Chat</h1>
 
-      <div className="flex gap-6">
+      <div className="md:flex flex-col md:flex-row gap-6 space-y-4">
         {/* Sidebar */}
-        <div className="w-1/4 bg-gray-100 rounded-lg shadow p-4">
+        <div className="w-full md:w-1/4 bg-gray-100 rounded-lg shadow p-4">
           <input
             type="text"
             placeholder="Search users..."
@@ -236,7 +236,7 @@ export default function TeacherMessages() {
         </div>
 
         {/* Chat Window (UNCHANGED DESIGN) */}
-        <div className="flex-1 flex flex-col bg-white rounded-lg shadow p-4">
+        <div className="flex-1 flex flex-col bg-white rounded-lg shadow p-4 h-[80vh]">
           <p className="font-bold text-gray-700 mb-2 border-b pb-2">
             {selectedUser ?
               `Chatting with ${selectedUser.name}`
@@ -244,6 +244,9 @@ export default function TeacherMessages() {
           </p>
 
           <div className="flex-1 overflow-y-auto mb-4 space-y-3">
+            {messages.length === 0 && selectedUser && (
+              <p className="text-gray-400 text-sm">No messages yet.</p>
+            )}
             {isTyping && (
               <div className="flex justify-start">
                 <div className="bg-gray-200 px-4 py-2 rounded-lg rounded-bl-none">
@@ -254,10 +257,6 @@ export default function TeacherMessages() {
                   </div>
                 </div>
               </div>
-            )}
-
-            {messages.length === 0 && selectedUser && (
-              <p className="text-gray-400 text-sm">No messages yet.</p>
             )}
 
             {messages.map((m) => {
