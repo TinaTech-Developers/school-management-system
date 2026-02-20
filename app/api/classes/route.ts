@@ -8,8 +8,8 @@ import { Subject } from "@/models/Subject";
 import { AuthToken } from "@/types/auth";
 
 export async function GET(req: Request) {
-  const auth = await verifyAdmin(req);
-  if (auth instanceof NextResponse) return auth;
+  // const auth = await verifyAdmin(req);
+  // if (auth instanceof NextResponse) return auth;
 
   try {
     await connectDB();

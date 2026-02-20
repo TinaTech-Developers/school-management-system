@@ -17,19 +17,16 @@ interface Student {
   _id: string;
   name: string;
 }
-
 interface Exam {
   _id: string;
   name: string;
   term: string;
   year: number;
 }
-
 interface ExamSubject {
   _id: string;
   name: string;
 }
-
 interface Result {
   _id: string;
   studentId: Student;
@@ -49,13 +46,44 @@ export default function TeacherResults() {
   const [selected, setSelected] = useState<Result | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string>("");
   const [analytics, setAnalytics] = useState<{
     analytics: { exam: { name: string }; avgScore: number }[];
     gradeDistribution: { _id: string; count: number }[];
   } | null>(null);
 
-  /*=====================FETCH ANALYTICS==============*/
+  // ==================== FETCH RESULTS ====================
+  const fetchResults = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/teacher/results");
+      if (!res.ok) throw new Error("Failed to fetch results");
+      const data = await res.json();
+      setResults(data);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to fetch results");
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  // ==================== FETCH OPTIONS ====================
+  const fetchOptions = async () => {
+    try {
+      const [examsRes, subjectsRes] = await Promise.all([
+        fetch("/api/exams"),
+        fetch("/api/exam-subjects"),
+      ]);
+      if (!examsRes.ok || !subjectsRes.ok)
+        throw new Error("Failed to fetch form options");
+      setExams(await examsRes.json());
+      setSubjects(await subjectsRes.json());
+    } catch (err: any) {
+      toast.error(err.message || "Failed to load form options");
+    }
+  };
+
+  // ==================== FETCH ANALYTICS ====================
   const fetchAnalytics = async () => {
     try {
       const res = await fetch("/api/teacher/results/analytics");
@@ -67,54 +95,14 @@ export default function TeacherResults() {
     }
   };
 
+  // ==================== INITIAL LOAD ====================
   useEffect(() => {
     fetchResults();
     fetchOptions();
     fetchAnalytics();
   }, []);
 
-  /* ================= FETCH RESULTS ================= */
-  const fetchResults = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch("/api/teacher/results");
-      if (!res.ok) throw new Error("Failed to fetch results");
-      const data = await res.json();
-      setResults(data);
-      fetchAnalytics();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to fetch results");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  /* ================= FETCH FORM OPTIONS ================= */
-  const fetchOptions = async () => {
-    try {
-      const [studentsRes, examsRes, subjectsRes] = await Promise.all([
-        fetch("/api/students"),
-        fetch("/api/exams"),
-        fetch("/api/exam-subjects"),
-      ]);
-
-      if (!studentsRes.ok || !examsRes.ok || !subjectsRes.ok)
-        throw new Error("Failed to fetch form options");
-
-      setStudents(await studentsRes.json());
-      setExams(await examsRes.json());
-      setSubjects(await subjectsRes.json());
-    } catch (err: any) {
-      toast.error(err.message || "Failed to load form options");
-    }
-  };
-
-  useEffect(() => {
-    fetchResults();
-    fetchOptions();
-  }, []);
-
-  /* ================= FILTERED RESULTS ================= */
+  // ==================== FILTERED RESULTS ====================
   const filteredResults = results.filter(
     (r) =>
       r.studentId.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -122,7 +110,7 @@ export default function TeacherResults() {
       r.subjectId.name.toLowerCase().includes(search.toLowerCase()),
   );
 
-  /* ================= ADD RESULT ================= */
+  // ==================== ADD RESULT ====================
   const addResult = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -147,14 +135,15 @@ export default function TeacherResults() {
       setResults((prev) => [data, ...prev]);
       setAddOpen(false);
       fetchAnalytics();
-
       e.currentTarget.reset();
+      setStudents([]); // reset students dropdown
+      setSelectedSubjectId("");
     } catch (err: any) {
       toast.error(err.message || "Failed to add result");
     }
   };
 
-  /* ================= UPDATE RESULT ================= */
+  // ==================== UPDATE RESULT ====================
   const updateResult = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!selected) return;
@@ -172,8 +161,8 @@ export default function TeacherResults() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-
       if (!res.ok) throw new Error("Failed to update result");
+
       toast.success("Result updated successfully!");
       fetchResults();
       setSelected(null);
@@ -202,15 +191,16 @@ export default function TeacherResults() {
           </div>
           <button
             onClick={() => setAddOpen(true)}
-            className="flex items-center gap-1 px-4 py-2 b  text-[#02abfa] text-sm rounded border border-black bg-[#02abfa] transition "
+            className="flex items-center gap-1 px-4 py-2 text-[#02abfa] text-sm rounded border border-black bg-[#02abfa] transition"
           >
             <FiPlus color="gray" /> Result
           </button>
         </div>
       </div>
+
+      {/* Analytics */}
       {analytics && (
         <div className="grid md:grid-cols-2 gap-4 mb-4">
-          {/* Average score per exam */}
           <div className="bg-white rounded-lg shadow p-4">
             <h3 className="font-bold text-gray-700 mb-2">
               Average Score per Exam
@@ -229,8 +219,6 @@ export default function TeacherResults() {
               </BarChart>
             </ResponsiveContainer>
           </div>
-
-          {/* Grade distribution */}
           <div className="bg-white rounded-lg shadow p-4">
             <h3 className="font-bold text-gray-700 mb-2">Grade Distribution</h3>
             <ResponsiveContainer width="100%" height={250}>
@@ -365,7 +353,7 @@ export default function TeacherResults() {
 
       {/* Add Result Modal */}
       {addOpen && (
-        <div className="fixed inset-0 bg-black/40 bg-opacity-0 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
             <button
               className="absolute top-3 right-3 text-gray-500 hover:text-red-500"
@@ -377,18 +365,60 @@ export default function TeacherResults() {
               Add Student Result
             </h3>
             <form className="flex flex-col gap-3" onSubmit={addResult}>
+              {/* Exam Subject */}
+              <select
+                name="examSubjectId"
+                required
+                className="w-full border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                onChange={async (e) => {
+                  const subjectId = e.target.value;
+                  setSelectedSubjectId(subjectId);
+
+                  if (!subjectId) {
+                    setStudents([]);
+                    return;
+                  }
+
+                  try {
+                    const res = await fetch(
+                      `/api/students?subjectId=${subjectId}`,
+                    );
+                    if (!res.ok) throw new Error("Failed to fetch students");
+                    const data = await res.json();
+                    setStudents(data);
+                  } catch (err: any) {
+                    toast.error(err.message || "Failed to load students");
+                  }
+                }}
+              >
+                <option value="">Select Subject</option>
+                {subjects.map((s) => (
+                  <option key={s._id} value={s._id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+
+              {/* Students */}
               <select
                 name="studentId"
                 required
+                disabled={!students.length}
                 className="w-full border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
-                <option value="">Select Student</option>
+                <option value="">
+                  {students.length ?
+                    "Select Student"
+                  : "Select a subject first"}
+                </option>
                 {students.map((s) => (
                   <option key={s._id} value={s._id}>
                     {s.name}
                   </option>
                 ))}
               </select>
+
+              {/* Exam */}
               <select
                 name="examId"
                 required
@@ -401,18 +431,8 @@ export default function TeacherResults() {
                   </option>
                 ))}
               </select>
-              <select
-                name="examSubjectId"
-                required
-                className="w-full border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              >
-                <option value="">Select Subject</option>
-                {subjects.map((s) => (
-                  <option key={s._id} value={s._id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+
+              {/* Score */}
               <input
                 name="score"
                 type="number"
@@ -420,11 +440,14 @@ export default function TeacherResults() {
                 placeholder="Score"
                 className="w-full border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
+
+              {/* Remarks */}
               <textarea
                 name="remarks"
                 placeholder="Remarks"
                 className="w-full border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
+
               <div className="flex justify-end gap-2 mt-2">
                 <button
                   type="button"

@@ -2,13 +2,13 @@
 import { connectDB } from "@/lib/db";
 import { User } from "@/models/User";
 import { NextResponse } from "next/server";
-import { verifyAdmin } from "@/lib/rbac";
+import { verifyTeacherOrAdmin } from "@/lib/rbac";
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
 export async function GET(req: Request) {
-  const admin = await verifyAdmin(req);
-  if (admin instanceof NextResponse) return admin;
+  // const verifiedUser = await verifyTeacherOrAdmin(req);
+  // if (verifiedUser instanceof NextResponse) return verifiedUser;
 
   try {
     await connectDB();

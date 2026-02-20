@@ -6,16 +6,26 @@ import bcrypt from "bcrypt";
 import { Subject } from "@/models/Subject";
 import { getAuthUser } from "@/lib/auth";
 
-// GET all students
+// GET all students by classId
 export async function GET(req: NextRequest) {
   await connectDB();
 
-  const adminCheck = await verifyAdmin(req);
-  if (adminCheck instanceof NextResponse) {
-    return adminCheck; // ✅ only return NextResponse
+  const classId = req.nextUrl.searchParams.get("classId");
+
+  if (!classId) {
+    return NextResponse.json(
+      { message: "classId is required" },
+      { status: 400 },
+    );
   }
 
-  const students = await User.find({ role: "STUDENT" }).lean();
+  const students = await User.find({
+    role: "STUDENT",
+    classId: classId,
+  })
+    .select("_id name")
+    .lean();
+
   return NextResponse.json(students);
 }
 

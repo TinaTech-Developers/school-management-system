@@ -73,3 +73,13 @@ export async function verifyTeacherOrAdmin(
 
   return token;
 }
+
+// verifyAuth
+
+export async function verifyAuth(req: Request | any) {
+  const token = await getToken({ req, secret: SECRET });
+  if (!token) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  return token; // user is authenticated, return token with role info
+}

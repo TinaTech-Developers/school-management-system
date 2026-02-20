@@ -9,7 +9,9 @@ import {
   Download,
   BookOpen,
   Clock,
+  ArrowLeft,
 } from "lucide-react";
+import Link from "next/link";
 
 export default function AssignmentViewPage() {
   const { id } = useParams();
@@ -143,6 +145,12 @@ export default function AssignmentViewPage() {
             )}
           </div>
         </motion.div>
+        <Link
+          href="/student/assignments"
+          className="mt-4 bg-black shadow-xl left-5 bottom-5 text-white px-4 py-2 rounded-lg inline-flex items-center gap-2 hover:bg-gray-800 transition"
+        >
+          <ArrowLeft size={20} /> Back
+        </Link>
       </motion.div>
     </div>
   );

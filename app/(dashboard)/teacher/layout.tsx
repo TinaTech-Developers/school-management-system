@@ -11,6 +11,11 @@ import {
   FiLogOut,
   FiClock,
   FiMenu,
+  FiFileText,
+  FiBookOpen,
+  FiMessageCircle,
+  FiUser,
+  FiSettings,
 } from "react-icons/fi";
 import { signOut } from "next-auth/react";
 
@@ -22,39 +27,21 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const pathname = usePathname();
   const navItems = [
-    { name: "Dashboard", icon: <FiHome size={22} />, href: "/teacher" },
-    {
-      name: "Timetable",
-      icon: <FiClock size={22} />,
-      href: "/teacher/timetable",
-    },
-    { name: "Classes", icon: <FiBook size={22} />, href: "/teacher/classes" },
-    // {
-    //   name: "Students",
-    //   icon: <FiUsers size={22} />,
-    //   href: "/teacher/students",
-    // },
-    // {
-    //   name: "Attendance",
-    //   icon: <FiClipboard size={22} />,
-    //   href: "/teacher/attendance",
-    // },
-    {
-      name: "Results",
-      icon: <FiClipboard size={22} />,
-      href: "/teacher/results",
-    },
+    { name: "Dashboard", icon: <FiHome />, href: "/teacher" },
+    { name: "Timetable", icon: <FiClock />, href: "/teacher/timetable" },
+    { name: "Classes", icon: <FiBook />, href: "/teacher/classes" },
+    { name: "Students", icon: <FiUsers />, href: "/teacher/students" },
+    { name: "Attendance", icon: <FiClipboard />, href: "/teacher/attendance" },
+    { name: "Exams & Results", icon: <FiBook />, href: "/teacher/exams" },
+    { name: "Assignments", icon: <FiFileText />, href: "/teacher/assignments" },
     {
       name: "Learning Materials",
-      icon: <FiBook size={22} />,
+      icon: <FiBookOpen />,
       href: "/teacher/learning-materials",
     },
-    {
-      name: "Assignments",
-      icon: <FiBook size={22} />,
-      href: "/teacher/assignments",
-    },
-    { name: "Profile", icon: <FiUsers size={22} />, href: "/teacher/profile" },
+    { name: "Messages", icon: <FiMessageCircle />, href: "/teacher/messages" },
+    { name: "Profile", icon: <FiUser />, href: "/teacher/profile" },
+    { name: "Settings", icon: <FiSettings />, href: "/teacher/settings" },
   ];
 
   return (
@@ -62,7 +49,7 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
       {/* Sidebar */}
       <aside
         className={`bg-white shadow-lg transition-all duration-300 ${
-          sidebarOpen ? "w-64" : "w-20"
+          sidebarOpen ? "w-56" : "w-20"
         } flex flex-col relative`}
       >
         {/* Toggle Button */}
@@ -90,7 +77,7 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
             <Link
               key={item.name}
               href={item.href}
-              className={`flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition rounded-lg mx-2 my-1 ${
+              className={`flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition rounded-lg mx-2 my-1 ${
                 pathname === item.href ?
                   "bg-indigo-100 text-indigo-700 font-semibold"
                 : ""
