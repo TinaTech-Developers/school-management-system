@@ -16,6 +16,7 @@ import {
   FiMessageCircle,
   FiUser,
   FiSettings,
+  FiBell,
 } from "react-icons/fi";
 import { signOut } from "next-auth/react";
 
@@ -31,6 +32,11 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
     { name: "Timetable", icon: <FiClock />, href: "/teacher/timetable" },
     { name: "Classes", icon: <FiBook />, href: "/teacher/classes" },
     { name: "Students", icon: <FiUsers />, href: "/teacher/students" },
+    {
+      name: "Notifications",
+      icon: <FiBell />,
+      href: "/teacher/notifications",
+    },
     { name: "Attendance", icon: <FiClipboard />, href: "/teacher/attendance" },
     { name: "Exams & Results", icon: <FiBook />, href: "/teacher/exams" },
     { name: "Assignments", icon: <FiFileText />, href: "/teacher/assignments" },
