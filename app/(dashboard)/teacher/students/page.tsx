@@ -97,7 +97,7 @@ export default function StudentsModule() {
       </div>
 
       {/* Filters + Search */}
-      <div className="bg-white shadow-md rounded-2xl p-6 flex flex-wrap gap-4 items-center">
+      <div className="bg-white shadow-md rounded-xl p-6 flex flex-wrap gap-4 items-center">
         <select
           value={selectedClass}
           onChange={(e) => setSelectedClass(e.target.value)}
@@ -137,7 +137,7 @@ export default function StudentsModule() {
 
       {/* Stats */}
       {selectedSubject && (
-        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl p-6 shadow-lg">
+        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl p-6 shadow-lg">
           <p className="text-sm opacity-80">Total Students</p>
           <h2 className="text-xl font-bold">{filteredStudents.length}</h2>
         </div>
@@ -159,7 +159,7 @@ export default function StudentsModule() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
                 transition={{ delay: i * 0.05 }}
-                className="bg-white rounded-2xl shadow-md p-5 hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
+                className="bg-white rounded-xl shadow-md p-5 hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
               >
                 <div className="flex items-center gap-4">
                   <div className="relative">

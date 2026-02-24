@@ -30,15 +30,28 @@ export default function StudentProfilePage() {
   const [student, setStudent] = useState<Student | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!studentId) return;
+  // useEffect(() => {
+  //   if (studentId) {
+  //     fetchStudent();
+  //   }
+  // }, [studentId]);
 
-    const fetchStudent = async () => {
+  useEffect(() => {
+    const loadStudent = async () => {
+      if (!studentId) return;
+
       try {
         setLoading(true);
+
         const res = await fetch(`/api/students/${studentId}`, {
           credentials: "include",
         });
+
+        if (!res.ok) {
+          setStudent(null);
+          return;
+        }
+
         const data = await res.json();
         setStudent(data);
       } catch (err) {
@@ -48,7 +61,7 @@ export default function StudentProfilePage() {
       }
     };
 
-    fetchStudent();
+    loadStudent();
   }, [studentId]);
 
   if (loading)
@@ -74,12 +87,12 @@ export default function StudentProfilePage() {
     .toUpperCase();
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10 px-4">
-      <div className="max-w-5xl mx-auto">
+    <div className="min-h-screen bg-gray-50 py- px-4">
+      <div className="w-full mx-auto">
         {/* Profile Card */}
         <div className="bg-white shadow-xl rounded-xl overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-indigo-500 to-purple-600 h-32 relative">
+          <div className="bg-linear-to-r from-indigo-500 to-purple-600 h-32 relative">
             <div className="absolute -bottom-14 left-8">
               {student.avatar ?
                 <img

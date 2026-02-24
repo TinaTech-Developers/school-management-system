@@ -126,7 +126,7 @@ export default function TeacherMaterialsPage() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-8">
-      <h1 className="text-4xl font-bold text-blue-600 animate-fade-in">
+      <h1 className=" text-2xl text-blue-600 animate-fade-in">
         📚 Learning Materials Manager
       </h1>
 
@@ -139,7 +139,7 @@ export default function TeacherMaterialsPage() {
         <select
           value={selectedSubject}
           onChange={(e) => setSelectedSubject(e.target.value)}
-          className="border p-3 rounded-xl w-full text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+          className="border px-3 py-2 rounded-sm w-1/4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
         >
           <option value="">Select Subject</option>
           {subjects.map((s) => (
@@ -158,7 +158,7 @@ export default function TeacherMaterialsPage() {
             animate={{ opacity: 1, y: 0 }}
             className="border rounded-2xl p-6 bg-white shadow-lg space-y-4"
           >
-            <h2 className="text-2xl font-semibold text-blue-500">
+            <h2 className="text-2xl  text-blue-500">
               Upload Learning Material
             </h2>
 

@@ -125,10 +125,10 @@ export default function TeacherTimetablePage() {
       {/* ================= HEADER ================= */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-xl font-bold text-gray-900">
             Teaching Timetable
           </h1>
-          <p className="text-gray-600 mt-1">
+          <p className="text-gray-600 mt-1 text-sm">
             {new Date().toLocaleDateString("en-US", {
               weekday: "long",
               day: "numeric",
@@ -162,7 +162,7 @@ export default function TeacherTimetablePage() {
               day === today ? "ring-2 ring-blue-500" : "opacity-80",
             )}
           >
-            <h2 className="text-lg font-semibold text-center text-gray-900 border-b pb-2">
+            <h2 className=" font-semibold text-center text-gray-900 border-b pb-2">
               {day}
             </h2>
 
@@ -192,7 +192,7 @@ export default function TeacherTimetablePage() {
                       )}
 
                     <div className="flex justify-between">
-                      <p className="font-semibold text-gray-600">
+                      <p className="font-semibold text-gray-600 text-sm">
                         {item.subject}
                       </p>
                       {item.locked && <span>🔒</span>}

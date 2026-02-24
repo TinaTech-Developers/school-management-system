@@ -25,6 +25,9 @@ interface ExamEvent {
   name: string;
   date: string;
   className: string;
+  startDate: string;
+  endDate: string;
+  term: string; // New: term info
 }
 
 export default function TeacherDashboard() {
@@ -48,7 +51,7 @@ export default function TeacherDashboard() {
         const data: Stats = await resStats.json();
         setStats(data);
 
-        const resExams = await fetch("/api/teacher/upcoming-exams");
+        const resExams = await fetch("/api/teacher/exams");
         const exams: ExamEvent[] = await resExams.json();
         setUpcomingExams(exams);
       } catch (err) {
@@ -107,8 +110,8 @@ export default function TeacherDashboard() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Teacher Dashboard</h1>
-        <p className="text-gray-600 mt-1">
+        <h1 className="text-xl font-bold text-gray-900">Teacher Dashboard</h1>
+        <p className="text-gray-600 mt-1 text-sm">
           Welcome back! Here's your teaching overview with quick stats and
           actions.
         </p>
@@ -142,7 +145,7 @@ export default function TeacherDashboard() {
               <p className="text-2xl font-semibold text-gray-900">
                 {card.value}
               </p>
-              <p className="text-gray-500 mt-1">{card.name}</p>
+              <p className="text-gray-500 mt-1 text-sm">{card.name}</p>
             </div>
           </Link>
         ))}
@@ -151,20 +154,20 @@ export default function TeacherDashboard() {
       {/* Quick Actions */}
       <div className="flex flex-wrap gap-4">
         <Link
-          href="/teacher/results/upload"
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition"
+          href="/teacher/exams"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm shadow hover:bg-blue-700 transition"
         >
           Upload Results
         </Link>
         <Link
           href="/teacher/attendance"
-          className="bg-green-600 text-white px-4 py-2 rounded-lg shadow hover:bg-green-700 transition"
+          className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm shadow hover:bg-green-700 transition"
         >
           Mark Attendance
         </Link>
         <Link
           href="/teacher/exams/create"
-          className="bg-yellow-500 text-white px-4 py-2 rounded-lg shadow hover:bg-yellow-600 transition"
+          className="bg-yellow-500 text-white px-4 py-2 rounded-lg text-sm shadow hover:bg-yellow-600 transition"
         >
           Create Exam
         </Link>
@@ -176,15 +179,28 @@ export default function TeacherDashboard() {
           Upcoming Exams
         </h2>
         {upcomingExams.length === 0 ?
-          <p className="text-gray-500">No upcoming exams scheduled.</p>
+          <p className="text-gray-500 text-sm">No upcoming exams scheduled.</p>
         : <ul className="divide-y divide-gray-200">
             {upcomingExams.map((exam) => (
-              <li key={exam.id} className="py-2 flex justify-between">
+              <li
+                key={exam.id}
+                className="py-2 flex justify-between text-gray-600 text-sm"
+              >
                 <span>
-                  {exam.name} ({exam.className})
+                  {exam.name} ({exam.term})
                 </span>
                 <span className="text-gray-400">
-                  {new Date(exam.date).toLocaleDateString()}
+                  {new Date(exam.startDate).toLocaleDateString("en-US", {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                  })}
+                  {" to "}
+                  {new Date(exam.endDate).toLocaleDateString("en-US", {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                  })}
                 </span>
               </li>
             ))}

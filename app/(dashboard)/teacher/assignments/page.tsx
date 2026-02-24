@@ -117,19 +117,17 @@ export default function TeacherAssignmentsPage() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-8">
-      <h1 className="text-2xl font-bold text-blue-600">
-        📝 Assignments Manager
-      </h1>
+      <h1 className="text-2xl  text-blue-600">📝 Assignments Manager</h1>
 
       <select
         value={selectedSubject}
         onChange={(e) => setSelectedSubject(e.target.value)}
-        className="border p-2 rounded-xl w-full text-gray-700"
+        className="border p-2 rounded-sm w-1/4 text-gray-700"
       >
         <option value="">Select Subject</option>
         {subjects.map((s) => (
           <option key={s._id} value={s._id}>
-            {s.name} ({s.className})
+            {s.name} ({s.className}){" "}
           </option>
         ))}
       </select>

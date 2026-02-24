@@ -1,8 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import { CreditCard, DollarSign, CheckCircle, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
-import { DollarSign, CheckCircle, AlertCircle, CreditCard } from "lucide-react";
 
 interface Payment {
   amount: number;
@@ -21,10 +29,13 @@ interface Fee {
   paymentHistory: Payment[];
 }
 
-export default function StudentFeesPage() {
+type Filter = "ALL" | "PAID" | "PARTIAL" | "PENDING";
+
+export default function StudentFeesDashboard() {
   const [fees, setFees] = useState<Fee[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState<Fee | null>(null);
+  const [selectedFee, setSelectedFee] = useState<Fee | null>(null);
+  const [filter, setFilter] = useState<Filter>("ALL");
 
   useEffect(() => {
     async function load() {
@@ -41,135 +52,181 @@ export default function StudentFeesPage() {
     load();
   }, []);
 
-  const totalAmount = fees.reduce((sum, f) => sum + f.amount, 0);
-  const totalPaid = fees.reduce((sum, f) => sum + f.paidAmount, 0);
+  if (loading)
+    return <p className="p-6 text-gray-500 text-center">Loading fees...</p>;
+
+  const filteredFees =
+    filter === "ALL" ? fees : fees.filter((f) => f.status === filter);
+
+  const totalAmount = filteredFees.reduce((sum, f) => sum + f.amount, 0);
+  const totalPaid = filteredFees.reduce((sum, f) => sum + f.paidAmount, 0);
   const totalPending = totalAmount - totalPaid;
 
-  if (loading) return <p className="p-6 text-gray-500">Loading fees...</p>;
+  const chartData = filteredFees.map((f) => ({
+    name: f.type,
+    Paid: f.paidAmount,
+    Pending: f.amount - f.paidAmount,
+  }));
 
   return (
-    <div className="space-y-10 p-6">
-      {/* ================= SUMMARY CARDS ================= */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="grid grid-cols-1 md:grid-cols-3 gap-6"
-      >
-        {[
-          {
-            icon: <DollarSign className="text-green-600 w-10 h-10 mb-3" />,
-            label: "Total Fees",
-            value: totalAmount,
-          },
-          {
-            icon: <CheckCircle className="text-blue-600 w-10 h-10 mb-3" />,
-            label: "Paid",
-            value: totalPaid,
-          },
-          {
-            icon: <AlertCircle className="text-red-600 w-10 h-10 mb-3" />,
-            label: "Pending",
-            value: totalPending,
-          },
-        ].map((card, idx) => (
-          <motion.div
-            key={idx}
-            whileHover={{ y: -4, boxShadow: "0px 10px 20px rgba(0,0,0,0.1)" }}
-            className="p-6 bg-white rounded-2xl shadow flex flex-col items-center transition"
-            transition={{ type: "spring", stiffness: 120 }}
-          >
-            {card.icon}
-            <p className="text-gray-500 uppercase text-sm tracking-wide">
-              {card.label}
-            </p>
-            <p className="text-3xl font-bold text-gray-900">
-              ${card.value.toLocaleString()}
-            </p>
-          </motion.div>
-        ))}
-      </motion.div>
-
-      {/* ================= DETAILED FEES TABLE ================= */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-2xl shadow p-6"
-      >
-        <h2 className="text-2xl font-semibold mb-6 text-blue-500">
-          Fee Details
-        </h2>
-        <div className="overflow-x-auto">
-          <table className="min-w-full border-collapse text-left">
-            <thead className="bg-gray-50">
-              <tr>
-                {[
-                  "Fee Type",
-                  "Amount",
-                  "Paid",
-                  "Pending",
-                  "Due Date",
-                  "Status",
-                ].map((h) => (
-                  <th
-                    key={h}
-                    className="py-3 px-4 text-gray-500 text-sm uppercase tracking-wider"
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {fees.map((fee, idx) => (
-                <motion.tr
-                  key={fee._id}
-                  whileHover={{
-                    scale: 1.02,
-                    boxShadow: "0px 5px 15px rgba(0,0,0,0.05)",
-                  }}
-                  transition={{ type: "spring", stiffness: 120 }}
-                  onClick={() => setSelected(fee)}
-                  className="cursor-pointer"
+    <div className="p-6 max-w-7xl mx-auto space-y-8">
+      {/* ================= KPI CARDS ================= */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <KpiCard
+          title="Total Fees"
+          value={totalAmount}
+          icon={<DollarSign />}
+          color="blue"
+        />
+        <KpiCard
+          title="Paid"
+          value={totalPaid}
+          icon={<CheckCircle />}
+          color="green"
+        />
+        <KpiCard
+          title="Pending"
+          value={totalPending}
+          icon={<AlertCircle />}
+          color="red"
+        />
+      </div>
+      {/* ================= FEES GRID ================= */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredFees.map((fee) => {
+          const progress = Math.min(fee.paidAmount / fee.amount, 1) * 100;
+          return (
+            <motion.div
+              key={fee._id}
+              layout
+              whileHover={{ scale: 1.03 }}
+              onClick={() => setSelectedFee(fee)}
+              className="bg-white rounded-2xl shadow-lg p-6 cursor-pointer flex flex-col items-center transition"
+            >
+              {/* Fee Type & Status */}
+              <div className="flex justify-between w-full mb-4 items-center">
+                <h3 className="font-semibold text-gray-800 text-lg">
+                  {fee.type}
+                </h3>
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                    fee.status === "PAID" ? "bg-green-100 text-green-700"
+                    : fee.status === "PARTIAL" ? "bg-yellow-100 text-yellow-700"
+                    : "bg-red-100 text-red-700"
+                  }`}
                 >
-                  <td className="py-3 px-4 font-medium">{fee.type}</td>
-                  <td className="py-3 px-4 text-gray-700">
+                  {fee.status}
+                </span>
+              </div>
+
+              {/* Circular Progress */}
+              <div className="relative w-24 h-24 mb-4">
+                <svg className="w-24 h-24 transform -rotate-90">
+                  <circle
+                    className="text-gray-200"
+                    strokeWidth="8"
+                    stroke="currentColor"
+                    fill="transparent"
+                    r="44"
+                    cx="48"
+                    cy="48"
+                  />
+                  <circle
+                    className={`${
+                      fee.status === "PAID" ? "text-green-500"
+                      : fee.status === "PARTIAL" ? "text-yellow-400"
+                      : "text-red-500"
+                    }`}
+                    strokeWidth="8"
+                    stroke="currentColor"
+                    fill="transparent"
+                    strokeDasharray={2 * Math.PI * 44}
+                    strokeDashoffset={2 * Math.PI * 44 * (1 - progress / 100)}
+                    r="44"
+                    cx="48"
+                    cy="48"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <p className="text-sm font-semibold text-gray-800">
+                    {Math.round(progress)}%
+                  </p>
+                </div>
+              </div>
+
+              {/* Stats */}
+              <div className="w-full grid grid-cols-2 gap-4 text-sm text-gray-600 mb-2">
+                <div className="flex flex-col items-center">
+                  <p className="font-semibold text-gray-800">
                     ${fee.amount.toLocaleString()}
-                  </td>
-                  <td className="py-3 px-4 text-green-600 font-semibold">
+                  </p>
+                  <p>Total</p>
+                </div>
+                <div className="flex flex-col items-center">
+                  <p className="font-semibold text-green-600">
                     ${fee.paidAmount.toLocaleString()}
-                  </td>
-                  <td className="py-3 px-4 text-red-600 font-semibold">
+                  </p>
+                  <p>Paid</p>
+                </div>
+                <div className="flex flex-col items-center">
+                  <p className="font-semibold text-red-600">
                     ${(fee.amount - fee.paidAmount).toLocaleString()}
-                  </td>
-                  <td className="py-3 px-4 text-gray-700">
+                  </p>
+                  <p>Pending</p>
+                </div>
+                <div className="flex flex-col items-center">
+                  <p className="font-semibold text-gray-800">
                     {new Date(fee.dueDate).toLocaleDateString()}
-                  </td>
-                  <td className="py-3 px-4">
-                    <motion.span
-                      key={fee.status}
-                      initial={{ scale: 0.8, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{ type: "spring", stiffness: 150 }}
-                      className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                        fee.status === "PAID" ?
-                          "bg-linear-to-r from-green-200 to-green-400 text-green-800"
-                        : fee.status === "PARTIAL" ?
-                          "bg-linear-to-r from-yellow-200 to-yellow-400 text-yellow-800"
-                        : "bg-linear-to-r from-red-200 to-red-400 text-red-800"
-                      }`}
-                    >
-                      {fee.status}
-                    </motion.span>
-                  </td>
-                </motion.tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </motion.div>
+                  </p>
+                  <p>Due</p>
+                </div>
+              </div>
+
+              <button className="mt-3 w-full bg-blue-500 hover:bg-blue-600 text-white py-1 rounded-full text-sm transition">
+                View Details
+              </button>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      {/* ================= FILTER TABS ================= */}
+      <div className="flex space-x-4 bg-gray-100 p-2 rounded-full w-max">
+        {(["ALL", "PAID", "PARTIAL", "PENDING"] as Filter[]).map((f) => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className={`px-4 py-1 rounded-full text-sm transition ${
+              filter === f ?
+                "bg-blue-500 text-white"
+              : "text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            {f}
+          </button>
+        ))}
+      </div>
+
+      {/* ================= CHART ================= */}
+      <div className="bg-white p-6 rounded-xl shadow">
+        <h2 className="text-xl font-semibold mb-4 text-gray-800">
+          Fees Overview
+        </h2>
+        {filteredFees.length ?
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={chartData}>
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="Paid" stackId="a" fill="#34D399" />
+              <Bar dataKey="Pending" stackId="a" fill="#F87171" />
+            </BarChart>
+          </ResponsiveContainer>
+        : <p className="text-gray-500 text-center py-20">No fees to display</p>}
+      </div>
 
       {/* ================= FEE DETAILS MODAL ================= */}
-      {selected && (
+      {selectedFee && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -181,11 +238,11 @@ export default function StudentFeesPage() {
             className="bg-white rounded-2xl shadow-lg max-w-lg w-full p-6 space-y-4"
           >
             <div className="flex justify-between items-center">
-              <h3 className="text-2xl font-bold text-blue-400">
-                {selected.type} Fee
+              <h3 className="text-2xl font-bold text-blue-500">
+                {selectedFee.type} Fee
               </h3>
               <button
-                onClick={() => setSelected(null)}
+                onClick={() => setSelectedFee(null)}
                 className="text-gray-500 hover:text-gray-700 text-xl"
               >
                 ✕
@@ -193,52 +250,31 @@ export default function StudentFeesPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <p className="text-gray-500 text-sm">Total Amount</p>
-                <p className="text-lg font-semibold text-gray-700">
-                  ${selected.amount.toLocaleString()}
-                </p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-gray-500 text-sm">Paid</p>
-                <p className="text-lg font-semibold text-green-600">
-                  ${selected.paidAmount.toLocaleString()}
-                </p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-gray-500 text-sm">Pending</p>
-                <p className="text-lg font-semibold text-red-600">
-                  ${(selected.amount - selected.paidAmount).toLocaleString()}
-                </p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-gray-500 text-sm">Due Date</p>
-                <p className="text-lg font-semibold text-gray-700">
-                  {new Date(selected.dueDate).toLocaleDateString()}
-                </p>
-              </div>
+              <Info
+                label="Total Amount"
+                value={`$${selectedFee.amount.toLocaleString()}`}
+              />
+              <Info
+                label="Paid"
+                value={`$${selectedFee.paidAmount.toLocaleString()}`}
+                color="green"
+              />
+              <Info
+                label="Pending"
+                value={`$${(selectedFee.amount - selectedFee.paidAmount).toLocaleString()}`}
+                color="red"
+              />
+              <Info
+                label="Due Date"
+                value={new Date(selectedFee.dueDate).toLocaleDateString()}
+              />
             </div>
 
             <h4 className="font-semibold text-gray-700">Payment History</h4>
-            {selected.paymentHistory.length ?
-              <motion.ul
-                initial="hidden"
-                animate="visible"
-                variants={{
-                  visible: { transition: { staggerChildren: 0.1 } },
-                  hidden: {},
-                }}
-                className="max-h-48 overflow-y-auto divide-y divide-gray-100 border rounded-lg text-gray-500"
-              >
-                {selected.paymentHistory.map((p, i) => (
-                  <motion.li
-                    key={i}
-                    variants={{
-                      hidden: { opacity: 0, y: 5 },
-                      visible: { opacity: 1, y: 0 },
-                    }}
-                    className="p-3 text-sm"
-                  >
+            {selectedFee.paymentHistory.length ?
+              <div className="max-h-48 overflow-y-auto divide-y divide-gray-100 border rounded-lg text-gray-500">
+                {selectedFee.paymentHistory.map((p, i) => (
+                  <div key={i} className="p-3 text-sm">
                     <div>
                       Amount: <strong>${p.amount}</strong>
                     </div>
@@ -254,23 +290,75 @@ export default function StudentFeesPage() {
                         Reference: <strong>{p.reference}</strong>
                       </div>
                     )}
-                  </motion.li>
+                  </div>
                 ))}
-              </motion.ul>
+              </div>
             : <p className="text-gray-400 text-sm italic">No payments yet.</p>}
 
-            {selected.status !== "PAID" && (
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full mt-4 bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition flex items-center justify-center gap-2 animate-pulse"
-              >
+            {selectedFee.status !== "PAID" && (
+              <button className="w-full mt-4 bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition flex items-center justify-center gap-2">
                 <CreditCard className="w-5 h-5" /> Pay Now
-              </motion.button>
+              </button>
             )}
           </motion.div>
         </motion.div>
       )}
+    </div>
+  );
+}
+
+function KpiCard({
+  title,
+  value,
+  icon,
+  color,
+}: {
+  title: string;
+  value: number;
+  icon: React.ReactNode;
+  color: string;
+}) {
+  const colorClass =
+    color === "green" ? "text-green-500"
+    : color === "red" ? "text-red-500"
+    : "text-blue-500";
+  return (
+    <motion.div
+      whileHover={{ scale: 1.03 }}
+      className="bg-white rounded-xl shadow p-6 flex items-center space-x-4 transition"
+    >
+      <div
+        className={`w-12 h-12 flex items-center justify-center rounded-full bg-gray-100 ${colorClass}`}
+      >
+        {icon}
+      </div>
+      <div>
+        <p className={`text-sm font-semibold ${colorClass}`}>{title}</p>
+        <p className="text-xl font-bold text-gray-900">
+          ${value.toLocaleString()}
+        </p>
+      </div>
+    </motion.div>
+  );
+}
+
+function Info({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: string;
+  color?: string;
+}) {
+  const colorClass =
+    color === "green" ? "text-green-600"
+    : color === "red" ? "text-red-600"
+    : "text-gray-700";
+  return (
+    <div className="space-y-1">
+      <p className="text-gray-500 text-sm">{label}</p>
+      <p className={`text-lg font-semibold ${colorClass}`}>{value}</p>
     </div>
   );
 }

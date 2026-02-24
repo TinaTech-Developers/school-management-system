@@ -7,25 +7,32 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export async function GET(
   req: Request,
-  context: { params: Promise<{ examId: string }> },
+  { params }: { params: Promise<{ examId: string }> },
 ) {
   try {
     await connectDB();
 
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== "TEACHER") {
+
+    if (!session || session.user.role !== "TEACHER" || !session.user.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { examId } = await context.params;
-    const objectId = new mongoose.Types.ObjectId(examId);
+    const { examId } = await params;
+
+    if (!mongoose.Types.ObjectId.isValid(examId)) {
+      return NextResponse.json({ error: "Invalid exam ID" }, { status: 400 });
+    }
+
+    const examObjectId = new mongoose.Types.ObjectId(examId);
+    const teacherObjectId = new mongoose.Types.ObjectId(session.user.id);
 
     // ===============================
     // FETCH RESULTS
     // ===============================
     const results = await Result.find({
-      examId: objectId,
-      enteredBy: session.user.id,
+      examId: examObjectId,
+      enteredBy: teacherObjectId,
     }).populate("studentId", "name");
 
     if (!results.length) {
@@ -43,34 +50,35 @@ export async function GET(
         classes: [],
         topStudents: [],
         riskStudents: [],
-        subjectAnalysis: [],
       });
     }
 
     // ===============================
-    // SUMMARY
+    // SUMMARY CALCULATION
     // ===============================
-    const marks = results.map((r) => r.score);
-    const total = marks.reduce((a, b) => a + b, 0);
+    const scores = results.map((r) => Number(r.score) || 0);
 
-    const averageScore = total / marks.length;
-    const highest = Math.max(...marks);
-    const lowest = Math.min(...marks);
+    const total = scores.reduce((a, b) => a + b, 0);
+    const averageScore = total / scores.length;
+    const highest = Math.max(...scores);
+    const lowest = Math.min(...scores);
 
-    const topStudent = results.reduce((top, r) =>
-      r.score > top.score ? r : top,
+    const topStudent = results.reduce(
+      (top, r) => (r.score > top.score ? r : top),
+      results[0],
     );
 
-    const passRate = (marks.filter((m) => m >= 50).length / marks.length) * 100;
+    const passRate =
+      (scores.filter((s) => s >= 50).length / scores.length) * 100;
 
     // ===============================
-    // SUBJECT PERFORMANCE
+    // SUBJECT PERFORMANCE (AGGREGATION)
     // ===============================
-    const subjectAnalysis = await Result.aggregate([
+    const subjects = await Result.aggregate([
       {
         $match: {
-          examId: objectId,
-          enteredBy: new mongoose.Types.ObjectId(session.user.id),
+          examId: examObjectId,
+          enteredBy: teacherObjectId,
         },
       },
       {
@@ -87,51 +95,59 @@ export async function GET(
           as: "subject",
         },
       },
-      { $unwind: "$subject" },
+      {
+        $unwind: {
+          path: "$subject",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
       {
         $project: {
-          name: "$subject.name",
-          average: { $round: ["$average", 1] },
+          name: { $ifNull: ["$subject.name", "Unknown"] },
+          average: {
+            $round: [{ $ifNull: ["$average", 0] }, 1],
+          },
         },
       },
     ]);
 
     // ===============================
-    // TOP STUDENTS
+    // TOP & RISK STUDENTS
     // ===============================
-    const topStudents = results
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 5)
-      .map((r) => ({
-        name: r.studentId.name,
-        average: r.score,
-      }));
+    const sortedResults = [...results].sort((a, b) => b.score - a.score);
+
+    const topStudents = sortedResults.slice(0, 5).map((r) => ({
+      name: r.studentId?.name || "Unknown",
+      average: r.score,
+    }));
 
     const riskStudents = results
       .filter((r) => r.score < 50)
       .map((r) => ({
-        name: r.studentId.name,
+        name: r.studentId?.name || "Unknown",
         average: r.score,
       }));
 
+    // ===============================
+    // RESPONSE
+    // ===============================
     return NextResponse.json({
       summary: {
         averageScore,
         highest,
         lowest,
-        totalStudents: marks.length,
+        totalStudents: scores.length,
         passRate,
-        topStudentName: topStudent.studentId.name,
+        topStudentName: topStudent.studentId?.name || "Unknown",
         topStudentScore: topStudent.score,
       },
-      subjects: subjectAnalysis,
+      subjects,
       classes: [],
       topStudents,
       riskStudents,
-      subjectAnalysis,
     });
-  } catch (err) {
-    console.error("ANALYSIS ERROR:", err);
+  } catch (error) {
+    console.error("ANALYSIS ERROR:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
