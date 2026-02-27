@@ -7,59 +7,43 @@ import { Bell, AlertTriangle, CheckCircle, CreditCard } from "lucide-react";
 interface Notification {
   _id: string;
   title: string;
-  description: string;
+  message: string; // ✅ change
   type: "INFO" | "WARNING" | "FEE" | "EXAM";
-  category: "CLASS" | "SCHOOL"; // ✅ New category
+  category: "CLASS" | "SCHOOL";
   createdAt: string;
   read: boolean;
+  className?: string;
+  subjectName?: string;
+  userName?: string;
 }
-
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [selectedNotification, setSelectedNotification] =
+    useState<Notification | null>(null);
 
   // Fetch notifications (dummy data for now)
   useEffect(() => {
-    const dummy: Notification[] = [
-      {
-        _id: "1",
-        title: "New Exam Scheduled",
-        description: "Math exam has been scheduled for 12 Feb at 10:00 AM",
-        type: "EXAM",
-        category: "CLASS",
-        createdAt: new Date().toISOString(),
-        read: false,
-      },
-      {
-        _id: "2",
-        title: "Fee Payment Reminder",
-        description: "Your school fees for January are still pending.",
-        type: "FEE",
-        category: "SCHOOL",
-        createdAt: new Date().toISOString(),
-        read: false,
-      },
-      {
-        _id: "3",
-        title: "Class Cancelled",
-        description: "History class for Monday has been cancelled.",
-        type: "WARNING",
-        category: "CLASS",
-        createdAt: new Date().toISOString(),
-        read: true,
-      },
-      {
-        _id: "4",
-        title: "School Closed",
-        description: "The school will be closed next Friday for maintenance.",
-        type: "INFO",
-        category: "SCHOOL",
-        createdAt: new Date().toISOString(),
-        read: false,
-      },
-    ];
-    setNotifications(dummy);
-  }, []);
+    async function loadNotifications() {
+      try {
+        const res = await fetch("/api/student/notifications");
+        const data = await res.json();
 
+        // ✅ Always force array
+        if (Array.isArray(data)) {
+          setNotifications(data);
+        } else if (Array.isArray(data.notifications)) {
+          setNotifications(data.notifications);
+        } else {
+          setNotifications([]);
+        }
+      } catch (err) {
+        console.error(err);
+        setNotifications([]);
+      }
+    }
+
+    loadNotifications();
+  }, []);
   const markAsRead = (id: string) => {
     setNotifications((prev) =>
       prev.map((n) => (n._id === id ? { ...n, read: true } : n)),
@@ -85,9 +69,10 @@ export default function NotificationsPage() {
     }
   };
 
-  const classNotifications = notifications.filter(
-    (n) => n.category === "CLASS",
-  );
+  const classNotifications =
+    Array.isArray(notifications) ?
+      notifications.filter((n) => n.category === "CLASS")
+    : [];
   const schoolNotifications = notifications.filter(
     (n) => n.category === "SCHOOL",
   );
@@ -106,12 +91,12 @@ export default function NotificationsPage() {
               "bg-white border-gray-200"
             : "bg-blue-50 border-blue-300 shadow"
           } cursor-pointer`}
-          onClick={() => markAsRead(n._id)}
+          onClick={() => setSelectedNotification(n)}
         >
           <div className="mt-1">{typeIcon(n.type)}</div>
           <div className="flex-1">
             <p className="font-semibold text-gray-800">{n.title}</p>
-            <p className="text-sm text-gray-500 mt-1">{n.description}</p>
+            <p className="text-sm text-gray-500 mt-1">{n.message}</p>
             <p className="text-xs text-gray-400 mt-1">
               {new Date(n.createdAt).toLocaleString()}
             </p>
@@ -126,8 +111,8 @@ export default function NotificationsPage() {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Notifications</h1>
-          <p className="text-gray-500 mt-1">
+          <h1 className="text-xl font-bold text-gray-900">Notifications</h1>
+          <p className="text-gray-500 mt-1 text-sm">
             Stay up-to-date with your classes and school updates.
           </p>
         </div>
@@ -164,6 +149,69 @@ export default function NotificationsPage() {
           </p>
         }
       </section>
+      <AnimatePresence>
+        {selectedNotification && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+            onClick={() => setSelectedNotification(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="relative bg-white p-6 rounded-lg shadow-lg max-w-md w-full border border-blue-500"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* 🔴 Close Button */}
+              <button
+                onClick={() => setSelectedNotification(null)}
+                className="absolute top-3 right-3 text-gray-400 hover:text-red-500 transition"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </button>
+
+              <h3 className="text-xl font-semibold mb-2 text-gray-700 pr-6">
+                {selectedNotification.title}
+              </h3>
+
+              {selectedNotification.className && (
+                <p className="text-sm text-gray-500">
+                  Class: {selectedNotification.className}
+                </p>
+              )}
+
+              {selectedNotification.subjectName && (
+                <p className="text-sm text-gray-500">
+                  Subject: {selectedNotification.subjectName}
+                </p>
+              )}
+
+              <p className="mt-3 text-gray-700 text-sm">
+                {selectedNotification.message}
+              </p>
+
+              <p className="text-xs text-gray-400 mt-4">
+                {new Date(selectedNotification.createdAt).toLocaleString()}
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -6,15 +6,19 @@ const JWT_SECRET = process.env.JWT_SECRET!;
 
 export async function getAuthUser(): Promise<AuthToken | null> {
   try {
-    const cookieStore = await cookies(); // ✅ await is REQUIRED
-    const token = cookieStore.get("token")?.value;
+    const cookieStore = await cookies(); // your version supports await
+    const tokenCookie = cookieStore.get("token");
 
-    if (!token) return null;
+    if (!tokenCookie) {
+      console.log("NO TOKEN COOKIE FOUND");
+      return null;
+    }
 
-    const decoded = jwt.verify(token, JWT_SECRET) as AuthToken;
+    const decoded = jwt.verify(tokenCookie.value, JWT_SECRET) as AuthToken;
 
     return decoded;
   } catch (error) {
+    console.error("JWT ERROR:", error);
     return null;
   }
 }

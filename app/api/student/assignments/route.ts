@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { verifyStudent } from "@/lib/rbac";
 import { Assignment } from "@/models/Assignment";
+import "@/models/Subject";
 
 export async function GET(req: NextRequest) {
   const studentCheck = await verifyStudent(req);

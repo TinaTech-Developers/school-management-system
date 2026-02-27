@@ -105,141 +105,186 @@ export default function StudentSubjectsPage() {
     }
   };
 
+  // 🎨 SUBJECT THEMES
+  const getSubjectTheme = (name: string) => {
+    const n = name.toLowerCase();
+
+    if (n.includes("chem")) {
+      return {
+        gradient: "from-purple-600 to-pink-500",
+        overlay: "bg-purple-900/30",
+        icon: "⚗️ 🧪  ",
+      };
+    }
+
+    if (n.includes("math")) {
+      return {
+        gradient: "from-blue-600 to-cyan-500",
+        overlay: "bg-blue-900/30",
+        icon: "📐 ♾️",
+      };
+    }
+
+    if (n.includes("computer") || n.includes("ict")) {
+      return {
+        gradient: "from-gray-800 to-gray-600",
+        overlay: "bg-black/40",
+        icon: "💻 👨‍💻",
+      };
+    }
+
+    if (n.includes("physics")) {
+      return {
+        gradient: "from-indigo-600 to-blue-500",
+        overlay: "bg-indigo-900/30",
+        icon: "🧲 ⚛️",
+      };
+    }
+
+    if (n.includes("biology")) {
+      return {
+        gradient: "from-green-600 to-emerald-500",
+        overlay: "bg-green-900/30",
+        icon: "🧬 👨‍🔬",
+      };
+    }
+
+    return {
+      gradient: "from-orange-500 to-red-500",
+      overlay: "bg-black/30",
+      icon: "📘",
+    };
+  };
+
   return (
-    <div className="w-full mx-auto p-2 space-y-10">
+    <div className="w-full mx-auto p-4 space-y-">
       <ToastContainer position="top-right" autoClose={3000} />
 
-      {/* Registered Subjects */}
+      {/* REGISTERED SUBJECTS */}
       <section>
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">
+        <h2 className="text-xl font-bold text-gray-800 mb-6">
           My Registered Subjects
         </h2>
+
         {mySubjects.length === 0 && (
-          <p className="text-gray-500">No registered subjects yet.</p>
+          <p className="text-gray-500 text-sm">No registered subjects yet.</p>
         )}
-        <div className="grid gap-4 sm:grid-cols-2">
-          {mySubjects.map((s) => (
-            <div
-              key={s._id}
-              className="relative rounded-2xl border border-green-300 bg-linear-to-br from-green-50 to-white p-5 shadow-md"
-            >
-              <Link href={`/student/subjects/${s._id}`}>
-                <div className="cursor-pointer hover:scale-[1.01] transition">
-                  <h3 className="font-semibold text-gray-800">
-                    {s.name}{" "}
+
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {mySubjects.map((s) => {
+            const theme = getSubjectTheme(s.name);
+
+            return (
+              <Link key={s._id} href={`/student/subjects/${s._id}`}>
+                <div className="cursor-pointer rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition">
+                  <div
+                    className={`relative h-36 bg-linear-to-br ${theme.gradient} flex items-center justify-center`}
+                  >
+                    <div className={`absolute inset-0 ${theme.overlay}`} />
+                    <span className="relative text-5xl text-white">
+                      {theme.icon}
+                    </span>
+
+                    <span className="absolute top-4 right-4 text-xs px-3 py-1 rounded-full bg-white/20 text-white backdrop-blur-md">
+                      Registered
+                    </span>
+                  </div>
+
+                  <div className="bg-white p-4">
+                    <h3 className="font-bold text-gray-800">{s.name}</h3>
+
                     {s.code && (
-                      <span className="ml-2 text-sm text-gray-500">
-                        ({s.code})
+                      <p className="text-sm text-gray-500">{s.code}</p>
+                    )}
+
+                    <p className="text-sm text-gray-600 mt-2">👨‍🏫 {s.teacher}</p>
+
+                    {s.isCompulsory && (
+                      <span className="inline-block mt-3 text-xs px-3 py-1 rounded-full bg-red-100 text-red-600 font-semibold">
+                        Compulsory
                       </span>
                     )}
-                  </h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Teacher: {s.teacher}
-                  </p>
-                  {s.isCompulsory && (
-                    <span className="inline-block mt-2 text-xs px-2 py-1 rounded-full bg-red-100 text-red-600">
-                      Compulsory
-                    </span>
-                  )}
-                  <span className="absolute top-4 right-4 text-xs px-3 py-1 rounded-full bg-green-600 text-white font-semibold">
-                    Registered
-                  </span>
+                  </div>
                 </div>
               </Link>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
-      {/* Unregistered Subjects */}
+      {/* AVAILABLE SUBJECTS */}
       <section>
-        <h2 className="text-2xl font-bold text-gray-800 mb-4 mt-4">
+        <h2 className="text-xl font-bold text-gray-800 mb-6">
           Available Subjects
         </h2>
+
         {unregisteredSubjects.length === 0 && (
-          <p className="text-gray-500">
+          <p className="text-gray-500 text-sm">
             You are registered for all subjects 🎉
           </p>
         )}
-        <div className="grid gap-4 sm:grid-cols-2">
+
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {unregisteredSubjects.map((s) => {
             const id = s.subjectId._id;
             const isSelected = selected.includes(id);
+            const theme = getSubjectTheme(s.subjectId.name);
 
             return (
               <label
                 key={id}
-                className={`
-        relative group cursor-pointer overflow-hidden rounded-2xl border
-        p-5 transition-all duration-300
-        bg-linear-to-br from-white to-gray-50
-        hover:shadow-xl hover:-translate-y-1
-        ${
-          isSelected ?
-            "border-blue-600 ring-2 ring-blue-200 shadow-xl"
-          : "border-gray-200"
-        }
-      `}
+                className={`relative cursor-pointer rounded-2xl overflow-hidden shadow-md transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 ${
+                  isSelected ? "ring-2 ring-blue-500" : ""
+                }`}
               >
-                {/* Glow effect when selected */}
-                {isSelected && (
-                  <div className="absolute inset-0 bg-blue-500/5 pointer-events-none" />
-                )}
-
-                {/* Checkbox */}
                 <input
                   type="checkbox"
                   checked={isSelected}
                   onChange={() => toggle(id)}
-                  className="absolute top-4 right-4 h-5 w-5 accent-blue-600 z-10"
+                  className="absolute top-4 right-4 h-5 w-5 accent-white z-20"
                 />
 
-                {/* Subject header */}
-                <div className="flex items-start gap-3">
-                  {/* Subject icon */}
-                  <div
-                    className={`
-            flex h-11 w-11 items-center justify-center rounded-xl text-white font-bold
-            ${isSelected ? "bg-blue-600" : "bg-gray-400"}
-          `}
-                  >
-                    {s.subjectId.name.charAt(0)}
-                  </div>
+                <div
+                  className={`relative h-40 bg-gradient-to-br ${theme.gradient} flex items-center justify-center`}
+                >
+                  <div className={`absolute inset-0 ${theme.overlay}`} />
 
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-800 leading-tight">
-                      {s.subjectId.name}
-                    </h3>
+                  <span className="relative text-6xl text-white drop-shadow-lg">
+                    {theme.icon}
+                  </span>
 
-                    {s.subjectId.code && (
-                      <p className="text-sm text-gray-500 mt-0.5">
-                        {s.subjectId.code}
-                      </p>
-                    )}
-                  </div>
+                  {s.subjectId.code && (
+                    <span className="absolute bottom-3 left-4 text-xs bg-white/20 backdrop-blur-md text-white px-3 py-1 rounded-full">
+                      {s.subjectId.code}
+                    </span>
+                  )}
                 </div>
 
-                {/* Teacher */}
-                <p className="mt-3 text-sm text-gray-600">
-                  👨‍🏫 Teacher:{" "}
-                  <span className="font-medium">
-                    {s.teacherId?.name || "Not Assigned"}
-                  </span>
-                </p>
+                <div className="bg-white p-4 space-y-2">
+                  <h3 className="text-lg font-bold text-gray-800">
+                    {s.subjectId.name}
+                  </h3>
 
-                {/* Footer tags */}
-                <div className="mt-4 flex items-center justify-between">
-                  {s.subjectId.isCompulsory && (
-                    <span className="text-xs px-3 py-1 rounded-full bg-red-100 text-red-600 font-medium">
-                      Compulsory
+                  <p className="text-sm text-gray-600">
+                    👨‍🏫{" "}
+                    <span className="font-medium">
+                      {s.teacherId?.name || "Not Assigned"}
                     </span>
-                  )}
+                  </p>
 
-                  {isSelected && (
-                    <span className="text-xs font-semibold text-blue-600">
-                      ✓ Selected
-                    </span>
-                  )}
+                  <div className="flex items-center justify-between pt-2">
+                    {s.subjectId.isCompulsory && (
+                      <span className="text-xs px-3 py-1 rounded-full bg-red-100 text-red-600 font-semibold">
+                        Compulsory
+                      </span>
+                    )}
+
+                    {isSelected && (
+                      <span className="text-xs font-semibold text-blue-600">
+                        ✓ Selected
+                      </span>
+                    )}
+                  </div>
                 </div>
               </label>
             );
@@ -247,14 +292,13 @@ export default function StudentSubjectsPage() {
         </div>
       </section>
 
-      {/* Register Button */}
       {canRegister && (
         <motion.button
           whileHover={{ scale: 1.03 }}
           whileTap={{ scale: 0.95 }}
           onClick={submit}
           disabled={loading}
-          className="bg-green-600 hover:bg-green-700 text-white p-4 rounded-xl text-sm font-medium shadow-lg mt-4"
+          className="bg-green-600 hover:bg-green-700 text-white px-6 py-4 rounded-xl text-sm font-semibold shadow-lg"
         >
           {loading ? "Registering..." : "Register Selected Subjects"}
         </motion.button>

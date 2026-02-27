@@ -9,6 +9,14 @@ import {
   FiClipboard,
   FiLayers,
   FiMenu,
+  FiCheckSquare,
+  FiBell,
+  FiCalendar,
+  FiGrid,
+  FiDollarSign,
+  FiBarChart2,
+  FiArchive,
+  FiSettings,
 } from "react-icons/fi";
 import { useState } from "react";
 import { signOut } from "next-auth/react";
@@ -23,20 +31,46 @@ export default function AdminLayout({
 
   const menuItems = [
     { name: "Dashboard", href: "/admin", icon: <FiHome /> },
+
+    // Academic Modules
     { name: "Classes", href: "/admin/classes", icon: <FiBook /> },
-    { name: "Assignments", href: "/admin/assignments", icon: <FiClipboard /> },
     { name: "Subjects", href: "/admin/subjects", icon: <FiLayers /> },
+    { name: "Assignments", href: "/admin/assignments", icon: <FiClipboard /> },
     { name: "Exams", href: "/admin/exams", icon: <FiClipboard /> },
     { name: "Results", href: "/admin/results", icon: <FiClipboard /> },
-    { name: "Fees", href: "/admin/fees", icon: <FiBook /> },
     { name: "Timetable", href: "/admin/timetable", icon: <FiLayers /> },
+    { name: "Attendance", href: "/admin/attendance", icon: <FiCheckSquare /> },
+    {
+      name: "Academic Year",
+      href: "/admin/academic-year",
+      icon: <FiCalendar />,
+    },
     {
       name: "Learning Material",
       href: "/admin/learning-material",
       icon: <FiBook />,
     },
-    { name: "Schools", href: "/admin/schools", icon: <FiHome /> },
+
+    // People Modules
     { name: "Users", href: "/admin/users", icon: <FiUsers /> },
+    { name: "Parents", href: "/admin/parents", icon: <FiUsers /> },
+    { name: "Departments", href: "/admin/departments", icon: <FiGrid /> },
+
+    // Finance Modules
+    { name: "Fees", href: "/admin/fees", icon: <FiBook /> },
+    { name: "Payroll", href: "/admin/payroll", icon: <FiDollarSign /> },
+
+    // Communication
+    { name: "Announcements", href: "/admin/announcements", icon: <FiBell /> },
+
+    // Reports
+    { name: "Reports", href: "/admin/reports", icon: <FiBarChart2 /> },
+
+    // Inventory / Assets
+    { name: "Inventory", href: "/admin/inventory", icon: <FiArchive /> },
+
+    // Settings
+    { name: "Schools", href: "/admin/schools", icon: <FiSettings /> },
   ];
 
   return (
@@ -63,9 +97,9 @@ export default function AdminLayout({
               key={item.href}
               href={item.href}
               className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors ${
-                pathname === item.href
-                  ? "bg-white text-black font-semibold"
-                  : "hover:bg-white/10"
+                pathname === item.href ?
+                  "bg-white text-black font-semibold"
+                : "hover:bg-white/10"
               }`}
             >
               <span className="text-lg">{item.icon}</span>

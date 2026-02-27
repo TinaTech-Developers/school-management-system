@@ -7,18 +7,38 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 export async function GET(req: NextRequest) {
   try {
     await connectDB();
+
     const session = await getServerSession(authOptions);
-    if (!session)
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const notifications = await Notification.find({
       $or: [
         { userId: session.user.id }, // personal/class notifications
         { category: "SCHOOL" },
       ],
-    }).sort({ createdAt: -1 });
+    })
+      .populate({ path: "classId", select: "name" })
+      .populate({ path: "subjectId", select: "name" })
+      .populate({ path: "userId", select: "name" })
+      .sort({ createdAt: -1 });
 
-    return NextResponse.json(notifications);
+    // ✅ Format response to match frontend interface
+    const formatted = notifications.map((n) => ({
+      _id: n._id,
+      title: n.title,
+      message: n.message,
+      type: n.type,
+      category: n.category,
+      createdAt: n.createdAt,
+      read: n.read,
+      className: n.classId?.name || undefined,
+      subjectName: n.subjectId?.name || undefined,
+      userName: n.userId?.name || undefined,
+    }));
+
+    return NextResponse.json(formatted);
   } catch (err) {
     console.error(err);
     return NextResponse.json(
@@ -27,7 +47,6 @@ export async function GET(req: NextRequest) {
     );
   }
 }
-
 export async function POST(req: NextRequest) {
   try {
     await connectDB();
